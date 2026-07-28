@@ -1,10 +1,19 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { SOURCE_LABELS } from "@/lib/constants";
-import { StatusSelect } from "@/components/StatusSelect";
-import { PlanPaidForm } from "@/components/PlanPaidForm";
+import { SOURCE_LABELS, SOURCE_STYLES } from "@/lib/constants";
+import { LeadStatusPlanForm } from "@/components/LeadStatusPlanForm";
+import { GeneralInfoForm } from "@/components/GeneralInfoForm";
+import { BillingForm } from "@/components/BillingForm";
+import { LeadTasks } from "@/components/LeadTasks";
+import { VoiceSelect } from "@/components/VoiceSelect";
+import { DeleteLeadButton } from "@/components/DeleteLeadButton";
+import { AssignLeadControl } from "@/components/AssignLeadControl";
+import { Badge, Avatar } from "@/components/Badge";
+import { IconArrowLeft } from "@/components/icons";
 import { addLeadNote } from "@/app/actions/leads";
+import { getCurrentProfile, isAdmin } from "@/lib/auth";
 import { notFound } from "next/navigation";
-import type { Lead, LeadNote } from "@/lib/database.types";
+import type { Lead, LeadNote, Task, Profile } from "@/lib/database.types";
 
 export default async function LeadDetailPage({
   params,
@@ -17,6 +26,21 @@ export default async function LeadDetailPage({
   const lead = data as Lead | null;
   if (!lead) notFound();
 
+  const profile = await getCurrentProfile();
+  const admin = isAdmin(profile);
+  let members: { id: string; label: string }[] = [];
+  if (admin) {
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("active", true)
+      .order("full_name", { ascending: true });
+    members = ((profilesData as Profile[] | null) ?? []).map((p) => ({
+      id: p.id,
+      label: p.full_name || p.email,
+    }));
+  }
+
   const { data: notesData } = await supabase
     .from("lead_notes")
     .select("*")
@@ -24,88 +48,98 @@ export default async function LeadDetailPage({
     .order("created_at", { ascending: false });
   const notes = notesData as LeadNote[] | null;
 
+  const { data: tasksData } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("lead_id", id)
+    .order("scheduled_at", { ascending: true });
+  const tasks = (tasksData as Task[] | null) ?? [];
+
   async function addNoteAction(formData: FormData) {
     "use server";
     await addLeadNote(id, String(formData.get("body") || ""));
   }
 
+  const readOnlyFields: [string, string | null][] = [
+    ["Contacto", lead.contacto],
+    ["Ciudad", lead.ciudad],
+    ["Oficio", lead.oficio],
+    ["Avisos/semana", lead.llamadas_semana],
+    ["Recibido", new Date(lead.created_at).toLocaleString("es-ES")],
+  ];
+
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{lead.nombre}</h1>
-        <p className="text-slate-400">
-          {lead.negocio} ·{" "}
-          <span className="inline-flex rounded-full bg-slate-800 px-2 py-0.5 text-xs">
-            {SOURCE_LABELS[lead.source] ?? lead.source}
-          </span>
-        </p>
+      <Link
+        href="/leads"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-brand-blue"
+      >
+        <IconArrowLeft className="h-4 w-4" />
+        Volver a leads
+      </Link>
+
+      <div className="flex items-center gap-4">
+        <Avatar name={lead.nombre} className="h-12 w-12 text-base" />
+        <div>
+          <h1 className="font-display text-2xl font-semibold text-brand-ink">{lead.nombre}</h1>
+          <p className="flex items-center gap-2 text-sm text-slate-500">
+            {lead.negocio}
+            <Badge className={SOURCE_STYLES[lead.source]}>
+              {SOURCE_LABELS[lead.source] ?? lead.source}
+            </Badge>
+          </p>
+        </div>
+        {admin && (
+          <div className="ml-auto">
+            <AssignLeadControl leadId={lead.id} ownerId={lead.owner_id} members={members} />
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm">
-        <div>
-          <span className="text-slate-500">Email</span>
-          <div>{lead.email || "—"}</div>
-        </div>
-        <div>
-          <span className="text-slate-500">Teléfono</span>
-          <div>{lead.telefono || "—"}</div>
-        </div>
-        <div>
-          <span className="text-slate-500">Contacto</span>
-          <div>{lead.contacto || "—"}</div>
-        </div>
-        <div>
-          <span className="text-slate-500">Ciudad</span>
-          <div>{lead.ciudad || "—"}</div>
-        </div>
-        <div>
-          <span className="text-slate-500">Oficio</span>
-          <div>{lead.oficio || "—"}</div>
-        </div>
-        <div>
-          <span className="text-slate-500">Avisos/semana</span>
-          <div>{lead.llamadas_semana || "—"}</div>
-        </div>
-        <div>
-          <span className="text-slate-500">Voz</span>
-          <div>{lead.voz || "—"}</div>
-        </div>
-        <div>
-          <span className="text-slate-500">Recibido</span>
-          <div>{new Date(lead.created_at).toLocaleString("es-ES")}</div>
-        </div>
-      </div>
+      <GeneralInfoForm
+        leadId={lead.id}
+        email={lead.email}
+        telefono={lead.telefono}
+        readOnlyFields={readOnlyFields}
+      >
+        <VoiceSelect leadId={lead.id} voz={lead.voz} />
+      </GeneralInfoForm>
+
+      <BillingForm
+        leadId={lead.id}
+        razonSocial={lead.razon_social}
+        cifNif={lead.cif_nif}
+        direccion={lead.direccion}
+        codigoPostal={lead.codigo_postal}
+        provincia={lead.provincia}
+        personaContacto={lead.persona_contacto}
+      />
 
       {lead.descripcion && (
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm">
-          <div className="text-slate-500 mb-1">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm text-sm">
+          <div className="mb-1 text-xs uppercase tracking-wide text-slate-400">
             {lead.source === "a_medida" ? "¿Qué necesita?" : "Comentarios"}
           </div>
-          <p className="whitespace-pre-wrap">{lead.descripcion}</p>
+          <p className="whitespace-pre-wrap text-brand-ink">{lead.descripcion}</p>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-8 items-start">
-        <div className="space-y-1">
-          <div className="text-sm text-slate-500">Estado</div>
-          <StatusSelect leadId={lead.id} status={lead.status} />
-        </div>
-        <PlanPaidForm leadId={lead.id} plan={lead.plan} paid={lead.paid} />
-      </div>
-
       <div className="space-y-3">
-        <h2 className="text-lg font-medium">Notas</h2>
-        <form action={addNoteAction} className="flex gap-2">
+        <h2 className="font-display text-lg font-medium text-brand-ink">Notas</h2>
+        <form
+          action={addNoteAction}
+          className="flex gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
+        >
           <textarea
             name="body"
             required
             rows={2}
             placeholder="Añadir una nota de seguimiento..."
-            className="flex-1 rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm"
+            className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-brand-ink outline-none focus:border-brand-blue"
           />
           <button
             type="submit"
-            className="self-end rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-sm font-medium"
+            className="self-end rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600"
           >
             Añadir
           </button>
@@ -114,19 +148,30 @@ export default async function LeadDetailPage({
           {(notes ?? []).map((note) => (
             <div
               key={note.id}
-              className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm"
+              className="rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-sm"
             >
-              <p className="whitespace-pre-wrap">{note.body}</p>
-              <div className="text-xs text-slate-500 mt-1">
+              <p className="whitespace-pre-wrap text-brand-ink">{note.body}</p>
+              <div className="mt-1 text-xs text-slate-400">
                 {new Date(note.created_at).toLocaleString("es-ES")}
               </div>
             </div>
           ))}
           {(!notes || notes.length === 0) && (
-            <p className="text-sm text-slate-500">Sin notas todavía.</p>
+            <p className="text-sm text-slate-400">Sin notas todavía.</p>
           )}
         </div>
       </div>
+
+      <LeadTasks leadId={lead.id} initialTasks={tasks} />
+
+      <LeadStatusPlanForm
+        leadId={lead.id}
+        status={lead.status}
+        plan={lead.plan}
+        paid={lead.paid}
+      />
+
+      {admin && <DeleteLeadButton leadId={lead.id} label="este lead" redirectTo="/leads" />}
     </div>
   );
 }
