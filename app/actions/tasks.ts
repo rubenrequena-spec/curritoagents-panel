@@ -14,6 +14,7 @@ async function revalidateTaskViews(
   leadId: string,
 ) {
   revalidatePath(`/leads/${leadId}`);
+  revalidatePath("/tareas");
   // The dashboard layout (where NotificationsBell lives) doesn't re-render
   // on every sibling navigation by default — this forces it to.
   revalidatePath("/leads/[id]", "layout");
@@ -64,6 +65,20 @@ export async function setTaskCompleted(
 export async function deleteTask(taskId: string, leadId: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+  await revalidateTaskViews(supabase, leadId);
+  return error ? { success: false, error: error.message } : { success: true };
+}
+
+export async function rescheduleTask(
+  taskId: string,
+  leadId: string,
+  scheduledAt: string,
+): Promise<ActionResult> {
+  if (new Date(scheduledAt).getTime() < Date.now()) {
+    return { success: false, error: "No se pueden posponer tareas al pasado." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("tasks").update({ scheduled_at: scheduledAt }).eq("id", taskId);
   await revalidateTaskViews(supabase, leadId);
   return error ? { success: false, error: error.message } : { success: true };
 }

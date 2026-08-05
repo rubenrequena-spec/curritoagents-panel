@@ -77,8 +77,8 @@ export const TASK_DUE_WINDOW_HOURS = 48;
 
 export const PLAN_MINUTE_LIMITS: Record<"aprendiz" | "oficial" | "maestro", number> = {
   aprendiz: 60,
-  oficial: 150,
-  maestro: 300,
+  oficial: 180,
+  maestro: 400,
 };
 
 // Precios estándar +IVA no incluido; no reflejan promociones temporales.

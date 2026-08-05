@@ -78,7 +78,8 @@ export function LeadTasks({
     return (
       <div
         key={task.id}
-        className={`flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-sm ${
+        id={`tarea-${task.id}`}
+        className={`flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-sm scroll-mt-24 ${
           overdue ? "border-l-2 border-l-red-400" : ""
         }`}
       >

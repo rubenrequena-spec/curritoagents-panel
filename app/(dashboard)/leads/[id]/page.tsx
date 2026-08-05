@@ -96,23 +96,32 @@ export default async function LeadDetailPage({
         )}
       </div>
 
-      <GeneralInfoForm
-        leadId={lead.id}
-        email={lead.email}
-        telefono={lead.telefono}
-        readOnlyFields={readOnlyFields}
-      >
-        <VoiceSelect leadId={lead.id} voz={lead.voz} />
-      </GeneralInfoForm>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <GeneralInfoForm
+          leadId={lead.id}
+          email={lead.email}
+          telefono={lead.telefono}
+          readOnlyFields={readOnlyFields}
+        >
+          <VoiceSelect leadId={lead.id} voz={lead.voz} />
+        </GeneralInfoForm>
 
-      <BillingForm
+        <BillingForm
+          leadId={lead.id}
+          razonSocial={lead.razon_social}
+          cifNif={lead.cif_nif}
+          direccion={lead.direccion}
+          codigoPostal={lead.codigo_postal}
+          provincia={lead.provincia}
+          personaContacto={lead.persona_contacto}
+        />
+      </div>
+
+      <LeadStatusPlanForm
         leadId={lead.id}
-        razonSocial={lead.razon_social}
-        cifNif={lead.cif_nif}
-        direccion={lead.direccion}
-        codigoPostal={lead.codigo_postal}
-        provincia={lead.provincia}
-        personaContacto={lead.persona_contacto}
+        status={lead.status}
+        plan={lead.plan}
+        paid={lead.paid}
       />
 
       {lead.descripcion && (
@@ -163,13 +172,6 @@ export default async function LeadDetailPage({
       </div>
 
       <LeadTasks leadId={lead.id} initialTasks={tasks} />
-
-      <LeadStatusPlanForm
-        leadId={lead.id}
-        status={lead.status}
-        plan={lead.plan}
-        paid={lead.paid}
-      />
 
       {admin && <DeleteLeadButton leadId={lead.id} label="este lead" redirectTo="/leads" />}
     </div>

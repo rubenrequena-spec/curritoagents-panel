@@ -93,9 +93,6 @@ export async function updateLeadStatusPlanPaid(
   leadId: string,
   input: { status: LeadStatus; plan: LeadPlan | null; paid: boolean },
 ): Promise<ActionResult> {
-  if (input.status === "ganado") {
-    return { success: false, error: "Usa confirmLeadWon para marcar un lead como ganado." };
-  }
   const supabase = await createClient();
   const { data: existing, error: fetchError } = await supabase
     .from("leads")
@@ -105,9 +102,15 @@ export async function updateLeadStatusPlanPaid(
   if (fetchError || !existing) {
     return { success: false, error: fetchError?.message ?? "Lead no encontrado" };
   }
+  // Only reject an actual transition into "ganado" (must go through
+  // confirmLeadWon) — an already-ganado lead (i.e. a client) still needs to
+  // save this form to tweak plan/paid without touching status.
+  if (input.status === "ganado" && existing.status !== "ganado") {
+    return { success: false, error: "Usa confirmLeadWon para marcar un lead como ganado." };
+  }
 
   const wasClosed = existing.status === "ganado" || existing.status === "perdido";
-  const willBeClosed = input.status === "perdido";
+  const willBeClosed = input.status === "ganado" || input.status === "perdido";
   let closed_at = existing.closed_at;
   if (!wasClosed && willBeClosed) closed_at = new Date().toISOString();
   if (wasClosed && !willBeClosed) closed_at = null; // reopened
@@ -124,6 +127,14 @@ export async function updateLeadStatusPlanPaid(
   revalidatePath("/pipeline");
   revalidatePath(`/leads/${leadId}`);
   revalidatePath("/leads/[id]", "layout");
+  const { data: client } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("lead_id", leadId)
+    .maybeSingle();
+  if (client) revalidatePath(`/clientes/${client.id}`);
+  revalidatePath("/clientes");
+  revalidatePath("/dashboard");
   return error ? { success: false, error: error.message } : { success: true };
 }
 

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconUsers, IconKanban, IconBriefcase, IconDashboard, IconUserCheck } from "@/components/icons";
+import { IconUsers, IconKanban, IconBriefcase, IconDashboard, IconUserCheck, IconClock } from "@/components/icons";
 
 const ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: IconDashboard, adminOnly: true },
   { href: "/leads", label: "Leads", icon: IconUsers, adminOnly: false },
   { href: "/pipeline", label: "Pipeline", icon: IconKanban, adminOnly: false },
+  { href: "/tareas", label: "Tareas", icon: IconClock, adminOnly: false },
   { href: "/clientes", label: "Clientes", icon: IconBriefcase, adminOnly: false },
   { href: "/usuarios", label: "Usuarios", icon: IconUserCheck, adminOnly: true },
 ];

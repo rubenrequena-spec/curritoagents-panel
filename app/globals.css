@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Briefly highlights a task row when arriving via a notification's deep link. */
+[id^="tarea-"]:target {
+  animation: tarea-highlight 2s ease-out;
+}
+@keyframes tarea-highlight {
+  0% {
+    background-color: #dbeafe;
+  }
+  100% {
+    background-color: transparent;
+  }
+}

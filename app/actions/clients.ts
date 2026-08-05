@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { provisionDashboardClient } from "@/lib/n8n";
+import { PLAN_MINUTE_LIMITS } from "@/lib/constants";
 import type { Database } from "@/lib/database.types";
 
 type ClientStatus = Database["public"]["Enums"]["client_status"];
@@ -74,24 +76,6 @@ export async function createClientManual(input: CreateClientInput): Promise<Crea
   return { success: true, clientId: client.id };
 }
 
-// Plan lives on the client's lead (leads.plan), not on clients — pricing
-// (lib/constants PLAN_PRICES) is always looked up from it, so changing it
-// here is enough to update MRR/ingresos everywhere without a separate price
-// field.
-export async function updateClientPlan(
-  clientId: string,
-  leadId: string,
-  plan: LeadPlan,
-): Promise<ActionResult> {
-  const supabase = await createClient();
-  const { error } = await supabase.from("leads").update({ plan }).eq("id", leadId);
-  revalidatePath(`/clientes/${clientId}`);
-  revalidatePath("/clientes");
-  revalidatePath(`/leads/${leadId}`);
-  revalidatePath("/dashboard");
-  return error ? { success: false, error: error.message } : { success: true };
-}
-
 export async function setClientAgentId(
   clientId: string,
   agentId: string | null,
@@ -106,6 +90,45 @@ export async function setClientAgentId(
       error.code === "23505" ? "Este agent_id ya está vinculado a otro cliente." : error.message;
     return { success: false, error: friendly };
   }
+
+  // Provision (or, if it already exists, just fetch) this agent's row in
+  // n8n's clientes_config so the public dashboard link works without Rubén
+  // having to create it by hand in n8n every time. Best-effort: a flaky/down
+  // n8n must never undo a successful agent_id link.
+  if (trimmed) {
+    const { data: client } = await supabase
+      .from("clients")
+      .select("lead:leads(negocio, oficio, email, telefono, plan)")
+      .eq("id", clientId)
+      .single();
+    const lead = client?.lead as unknown as
+      | {
+          negocio: string;
+          oficio: string | null;
+          email: string | null;
+          telefono: string | null;
+          plan: LeadPlan | null;
+        }
+      | null;
+    if (lead) {
+      const provisioned = await provisionDashboardClient({
+        agentId: trimmed,
+        clientName: lead.negocio,
+        oficio: lead.oficio,
+        notifyEmail: lead.email,
+        whatsappNumber: lead.telefono,
+        planMinutos: lead.plan ? PLAN_MINUTE_LIMITS[lead.plan] : 0,
+      });
+      if (provisioned) {
+        await supabase
+          .from("clients")
+          .update({ dashboard_token: provisioned.dashboardToken })
+          .eq("id", clientId);
+        revalidatePath(`/clientes/${clientId}`);
+      }
+    }
+  }
+
   return { success: true };
 }
 

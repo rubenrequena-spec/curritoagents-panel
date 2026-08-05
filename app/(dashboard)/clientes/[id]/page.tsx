@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { SOURCE_LABELS, SOURCE_STYLES, PLAN_LABELS, PLAN_MINUTE_LIMITS } from "@/lib/constants";
+import { SOURCE_LABELS, SOURCE_STYLES, PLAN_MINUTE_LIMITS } from "@/lib/constants";
 import { currentMonthValue, formatMonthLabel } from "@/lib/month";
 import { getMinutesUsed } from "@/lib/n8n";
 import { setClientAgentId } from "@/app/actions/clients";
 import { LeadTasks } from "@/components/LeadTasks";
+import { LeadStatusPlanForm } from "@/components/LeadStatusPlanForm";
 import { GeneralInfoForm } from "@/components/GeneralInfoForm";
 import { BillingForm } from "@/components/BillingForm";
 import { VoiceSelect } from "@/components/VoiceSelect";
 import { DeleteLeadButton } from "@/components/DeleteLeadButton";
 import { ClientStatusControl } from "@/components/ClientStatusControl";
-import { ChangePlanControl } from "@/components/ChangePlanControl";
 import { Badge, Avatar } from "@/components/Badge";
 import { IconArrowLeft } from "@/components/icons";
 import { getCurrentProfile, isAdmin } from "@/lib/auth";
@@ -57,7 +57,6 @@ export default async function ClienteDetailPage({
     ["Ciudad", lead.ciudad],
     ["Oficio", lead.oficio],
     ["Avisos/semana", lead.llamadas_semana],
-    ["Plan", lead.plan ? PLAN_LABELS[lead.plan] : null],
     ["Cliente desde", new Date(client.created_at).toLocaleDateString("es-ES")],
   ];
 
@@ -83,28 +82,36 @@ export default async function ClienteDetailPage({
           </p>
         </div>
         <div className="ml-auto flex items-center gap-4">
-          <ChangePlanControl clientId={client.id} leadId={lead.id} plan={lead.plan} />
           <ClientStatusControl clientId={client.id} status={client.status} />
         </div>
       </div>
 
-      <GeneralInfoForm
-        leadId={lead.id}
-        email={lead.email}
-        telefono={lead.telefono}
-        readOnlyFields={readOnlyFields}
-      >
-        <VoiceSelect leadId={lead.id} voz={lead.voz} />
-      </GeneralInfoForm>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <GeneralInfoForm
+          leadId={lead.id}
+          email={lead.email}
+          telefono={lead.telefono}
+          readOnlyFields={readOnlyFields}
+        >
+          <VoiceSelect leadId={lead.id} voz={lead.voz} />
+        </GeneralInfoForm>
 
-      <BillingForm
+        <BillingForm
+          leadId={lead.id}
+          razonSocial={lead.razon_social}
+          cifNif={lead.cif_nif}
+          direccion={lead.direccion}
+          codigoPostal={lead.codigo_postal}
+          provincia={lead.provincia}
+          personaContacto={lead.persona_contacto}
+        />
+      </div>
+
+      <LeadStatusPlanForm
         leadId={lead.id}
-        razonSocial={lead.razon_social}
-        cifNif={lead.cif_nif}
-        direccion={lead.direccion}
-        codigoPostal={lead.codigo_postal}
-        provincia={lead.provincia}
-        personaContacto={lead.persona_contacto}
+        status={lead.status}
+        plan={lead.plan}
+        paid={lead.paid}
       />
 
       <Link
@@ -191,6 +198,30 @@ export default async function ClienteDetailPage({
           })()
         )}
       </div>
+
+      {client.agent_id && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm text-sm">
+          <h2 className="mb-3 font-display text-lg font-medium text-brand-ink">Panel del cliente</h2>
+          {client.dashboard_token ? (
+            <div className="space-y-1">
+              <p className="text-slate-500">Comparte este enlace con el cliente:</p>
+              <a
+                href={`https://panel.curritoagents.com/dashboard?token=${client.dashboard_token}`}
+                target="_blank"
+                rel="noreferrer"
+                className="break-all text-brand-blue hover:underline"
+              >
+                {`https://panel.curritoagents.com/dashboard?token=${client.dashboard_token}`}
+              </a>
+            </div>
+          ) : (
+            <p className="text-amber-600">
+              Aún no se ha generado el enlace del panel (no se pudo conectar con n8n al vincular el
+              agente). Vuelve a guardar el agent_id para reintentarlo.
+            </p>
+          )}
+        </div>
+      )}
 
       <LeadTasks leadId={lead.id} initialTasks={tasks} />
 

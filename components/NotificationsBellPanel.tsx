@@ -124,7 +124,7 @@ export function NotificationsBellPanel({
                   return (
                     <Link
                       key={task.id}
-                      href={task.lead ? `/leads/${task.lead.id}` : "/leads"}
+                      href={task.lead ? `/leads/${task.lead.id}#tarea-${task.id}` : "/leads"}
                       onClick={() => setOpen(false)}
                       className="block rounded-lg px-2 py-1.5 hover:bg-blue-50/60"
                     >

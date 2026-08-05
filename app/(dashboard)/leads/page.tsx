@@ -162,10 +162,10 @@ export default async function LeadsPage({
         {countsByStatus.map(({ status: s, count }) => (
           <div
             key={s}
-            className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+            className="flex flex-col items-start gap-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
           >
             <Badge className={STATUS_STYLES[s]}>{STATUS_LABELS[s]}</Badge>
-            <span className="font-display text-lg font-semibold text-brand-ink">{count}</span>
+            <span className="font-display text-2xl font-semibold text-brand-ink">{count}</span>
           </div>
         ))}
       </div>
