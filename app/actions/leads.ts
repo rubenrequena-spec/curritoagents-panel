@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentProfile, isAdmin } from "@/lib/auth";
-import type { Database } from "@/lib/database.types";
+import type { Database, Lead } from "@/lib/database.types";
 
 type LeadStatus = Database["public"]["Enums"]["lead_status"];
 type LeadPlan = Database["public"]["Enums"]["lead_plan"];
@@ -292,4 +292,53 @@ export async function deleteLead(
   revalidatePath("/clientes");
   revalidatePath("/leads/[id]", "layout");
   redirect(redirectTo);
+}
+
+export type ExportLeadsFilters = { source?: string; status?: string; q?: string };
+export type ExportLeadsResult = { success: true; csv: string } | { success: false; error: string };
+
+const EXPORT_COLUMNS: Array<{ key: keyof Lead; header: string }> = [
+  { key: "nombre", header: "Nombre" },
+  { key: "negocio", header: "Negocio" },
+  { key: "oficio", header: "Oficio" },
+  { key: "source", header: "Origen" },
+  { key: "status", header: "Estado" },
+  { key: "telefono", header: "Telefono" },
+  { key: "email", header: "Email" },
+  { key: "ciudad", header: "Ciudad" },
+  { key: "plan", header: "Plan" },
+  { key: "created_at", header: "Fecha" },
+];
+
+function csvEscape(value: unknown): string {
+  const s = value === null || value === undefined ? "" : String(value);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+// Admin-only: exports the same rows the leads page currently has filtered
+// (or everything if unfiltered) as a CSV string, so the client can trigger
+// a browser download without a live Google Sheets integration.
+export async function exportLeadsToCsv(filters: ExportLeadsFilters): Promise<ExportLeadsResult> {
+  const profile = await getCurrentProfile();
+  if (!isAdmin(profile)) return { success: false, error: "No autorizado." };
+
+  const supabase = await createClient();
+  let query = supabase.from("leads").select("*");
+  if (filters.source) query = query.eq("source", filters.source);
+  if (filters.status) query = query.eq("status", filters.status);
+  if (filters.q) {
+    const pattern = `"%${filters.q.replace(/"/g, '\\"')}%"`;
+    query = query.or(
+      `nombre.ilike.${pattern},negocio.ilike.${pattern},email.ilike.${pattern},telefono.ilike.${pattern},contacto.ilike.${pattern}`,
+    );
+  }
+  const { data, error } = await query.order("created_at", { ascending: false });
+  if (error) return { success: false, error: error.message };
+
+  const rows = (data as Lead[] | null) ?? [];
+  const lines = [
+    EXPORT_COLUMNS.map((c) => csvEscape(c.header)).join(","),
+    ...rows.map((row) => EXPORT_COLUMNS.map((c) => csvEscape(row[c.key])).join(",")),
+  ];
+  return { success: true, csv: lines.join("\n") };
 }

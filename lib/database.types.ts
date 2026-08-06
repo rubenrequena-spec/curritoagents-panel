@@ -257,7 +257,7 @@ export type Database = {
     Enums: {
       client_status: "activo" | "baja"
       lead_plan: "aprendiz" | "oficial" | "maestro"
-      lead_source: "wizard" | "a_medida"
+      lead_source: "wizard" | "a_medida" | "demo_call"
       lead_status:
         | "nuevo"
         | "contactado"
@@ -396,7 +396,7 @@ export const Constants = {
     Enums: {
       client_status: ["activo", "baja"],
       lead_plan: ["aprendiz", "oficial", "maestro"],
-      lead_source: ["wizard", "a_medida"],
+      lead_source: ["wizard", "a_medida", "demo_call"],
       lead_status: [
         "nuevo",
         "contactado",

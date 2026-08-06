@@ -28,6 +28,7 @@ export const STATUS_LABELS: Record<string, string> = {
 export const SOURCE_LABELS: Record<string, string> = {
   wizard: "Configura tu agente",
   a_medida: "Hecho a medida",
+  demo_call: "Llamada a la demo",
 };
 
 export const PLAN_LABELS: Record<string, string> = {
@@ -57,6 +58,7 @@ export const STATUS_DOT: Record<string, string> = {
 export const SOURCE_STYLES: Record<string, string> = {
   wizard: "bg-blue-50 text-brand-blue border-blue-100",
   a_medida: "bg-orange-50 text-brand-orange border-orange-100",
+  demo_call: "bg-indigo-50 text-indigo-600 border-indigo-100",
 };
 
 export const TASK_TYPE_ORDER = ["llamada", "demo", "cierre"] as const;

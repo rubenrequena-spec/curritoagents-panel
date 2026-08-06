@@ -3,8 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { STATUS_LABELS, STATUS_ORDER, STATUS_STYLES, SOURCE_LABELS } from "@/lib/constants";
 import { LeadsTable } from "@/components/LeadsTable";
 import { NewLeadDialog } from "@/components/NewLeadDialog";
+import { ExportLeadsButton } from "@/components/ExportLeadsButton";
 import { Badge } from "@/components/Badge";
 import { IconSearch } from "@/components/icons";
+import { getCurrentProfile, isAdmin } from "@/lib/auth";
 import type { Lead } from "@/lib/database.types";
 
 const LEADS_PAGE_SIZE = 10;
@@ -96,6 +98,7 @@ export default async function LeadsPage({
   const { source, status, q, page: pageParam } = await searchParams;
   const hasFilters = Boolean(source || status || q);
   const page = Math.max(1, Number(pageParam) || 1);
+  const admin = isAdmin(await getCurrentProfile());
   const supabase = await createClient();
 
   let mainQuery = supabase.from("leads").select("*", { count: "exact" });
@@ -155,7 +158,10 @@ export default async function LeadsPage({
             Todos los leads recibidos desde la web y el asistente de configuración.
           </p>
         </div>
-        <NewLeadDialog />
+        <div className="flex items-center gap-2">
+          {admin && <ExportLeadsButton filters={{ source, status, q }} />}
+          <NewLeadDialog />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
