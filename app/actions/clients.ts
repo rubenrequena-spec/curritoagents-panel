@@ -132,6 +132,21 @@ export async function setClientAgentId(
   return { success: true };
 }
 
+export async function setClientPhoneNumber(
+  clientId: string,
+  phoneNumber: string | null,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const trimmed = phoneNumber?.trim() || null;
+  const { error } = await supabase
+    .from("clients")
+    .update({ phone_number: trimmed })
+    .eq("id", clientId);
+  revalidatePath(`/clientes/${clientId}`);
+  revalidatePath("/clientes");
+  return error ? { success: false, error: error.message } : { success: true };
+}
+
 export async function setClientStatus(
   clientId: string,
   status: ClientStatus,

@@ -39,6 +39,7 @@ export default async function ClientesPage() {
             <tr>
               <th className="px-4 py-3 font-medium">Nombre</th>
               <th className="px-4 py-3 font-medium">Negocio</th>
+              <th className="px-4 py-3 font-medium">Teléfono</th>
               <th className="px-4 py-3 font-medium">Plan</th>
               <th className="px-4 py-3 font-medium">Estado del lead</th>
               <th className="px-4 py-3 font-medium">Estado</th>
@@ -57,6 +58,7 @@ export default async function ClientesPage() {
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-slate-600">{client.lead.negocio}</td>
+                <td className="px-4 py-3 text-slate-500">{client.phone_number || "—"}</td>
                 <td className="px-4 py-3 text-slate-500">
                   {client.lead.plan ? PLAN_LABELS[client.lead.plan] : "Sin plan"}
                 </td>
@@ -77,7 +79,7 @@ export default async function ClientesPage() {
             ))}
             {(clients ?? []).length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-slate-400">
+                <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
                   Todavía no hay clientes.
                 </td>
               </tr>

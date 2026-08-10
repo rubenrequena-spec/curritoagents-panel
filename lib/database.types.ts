@@ -22,6 +22,7 @@ export type Database = {
           dashboard_token: string | null
           id: string
           lead_id: string
+          phone_number: string | null
           status: Database["public"]["Enums"]["client_status"]
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           dashboard_token?: string | null
           id?: string
           lead_id: string
+          phone_number?: string | null
           status?: Database["public"]["Enums"]["client_status"]
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           dashboard_token?: string | null
           id?: string
           lead_id?: string
+          phone_number?: string | null
           status?: Database["public"]["Enums"]["client_status"]
         }
         Relationships: [
@@ -110,6 +113,7 @@ export type Database = {
           source: Database["public"]["Enums"]["lead_source"]
           status: Database["public"]["Enums"]["lead_status"]
           telefono: string | null
+          telefono_llamante: string | null
           updated_at: string
           voz: string | null
         }
@@ -141,6 +145,7 @@ export type Database = {
           source: Database["public"]["Enums"]["lead_source"]
           status?: Database["public"]["Enums"]["lead_status"]
           telefono?: string | null
+          telefono_llamante?: string | null
           updated_at?: string
           voz?: string | null
         }
@@ -172,6 +177,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["lead_source"]
           status?: Database["public"]["Enums"]["lead_status"]
           telefono?: string | null
+          telefono_llamante?: string | null
           updated_at?: string
           voz?: string | null
         }

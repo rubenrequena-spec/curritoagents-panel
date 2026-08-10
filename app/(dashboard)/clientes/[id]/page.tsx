@@ -11,6 +11,7 @@ import { BillingForm } from "@/components/BillingForm";
 import { VoiceSelect } from "@/components/VoiceSelect";
 import { DeleteLeadButton } from "@/components/DeleteLeadButton";
 import { ClientStatusControl } from "@/components/ClientStatusControl";
+import { PhoneNumberField } from "@/components/PhoneNumberField";
 import { Badge, Avatar } from "@/components/Badge";
 import { IconArrowLeft } from "@/components/icons";
 import { getCurrentProfile, isAdmin } from "@/lib/auth";
@@ -105,6 +106,10 @@ export default async function ClienteDetailPage({
           provincia={lead.provincia}
           personaContacto={lead.persona_contacto}
         />
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm text-sm">
+        <PhoneNumberField clientId={client.id} phoneNumber={client.phone_number} />
       </div>
 
       <LeadStatusPlanForm
