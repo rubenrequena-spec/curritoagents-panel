@@ -171,15 +171,16 @@ export default async function ClienteDetailPage({
           </div>
         ) : (
           (() => {
-            const usedMin = Math.round(minutes.totalSeconds / 60);
+            const totalSeconds = Math.max(0, Math.round(minutes.totalSeconds));
+            const usedLabel = `${Math.floor(totalSeconds / 60)}m ${totalSeconds % 60}s`;
             const limit = lead.plan ? PLAN_MINUTE_LIMITS[lead.plan] : null;
-            const pct = limit ? Math.min(100, Math.round((usedMin / limit) * 100)) : null;
+            const pct = limit ? Math.min(100, Math.round((totalSeconds / (limit * 60)) * 100)) : null;
             const barColor = pct === null ? "" : pct >= 100 ? "bg-red-500" : pct >= 90 ? "bg-amber-500" : "bg-brand-blue";
             return (
               <div className="space-y-2">
                 <div className="flex items-baseline justify-between">
                   <span className="font-display text-xl font-semibold text-brand-ink">
-                    {usedMin} {limit ? `/ ${limit} min` : "min"}
+                    {usedLabel} {limit ? `/ ${limit} min` : ""}
                   </span>
                   <span className="text-xs text-slate-400">{minutes.callCount} llamadas</span>
                 </div>
