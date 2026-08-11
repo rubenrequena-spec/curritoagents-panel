@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentProfile, isAdmin } from "@/lib/auth";
+import { provisionDashboardClient } from "@/lib/n8n";
+import { PLAN_MINUTE_LIMITS } from "@/lib/constants";
 import type { Database, Lead } from "@/lib/database.types";
 
 type LeadStatus = Database["public"]["Enums"]["lead_status"];
@@ -96,7 +98,7 @@ export async function updateLeadStatusPlanPaid(
   const supabase = await createClient();
   const { data: existing, error: fetchError } = await supabase
     .from("leads")
-    .select("status, paid, paid_at, closed_at")
+    .select("status, paid, paid_at, closed_at, negocio, oficio, email, telefono")
     .eq("id", leadId)
     .single();
   if (fetchError || !existing) {
@@ -129,12 +131,28 @@ export async function updateLeadStatusPlanPaid(
   revalidatePath("/leads/[id]", "layout");
   const { data: client } = await supabase
     .from("clients")
-    .select("id")
+    .select("id, agent_id")
     .eq("lead_id", leadId)
     .maybeSingle();
   if (client) revalidatePath(`/clientes/${client.id}`);
   revalidatePath("/clientes");
   revalidatePath("/dashboard");
+
+  // Keep n8n's clientes_config in sync when the plan changes for an
+  // already-linked client — otherwise plan_minutos stays frozen at whatever
+  // it was when the agent was first linked (setClientAgentId). Best-effort,
+  // same as there: a flaky/down n8n must never undo a successful plan save.
+  if (!error && client?.agent_id) {
+    await provisionDashboardClient({
+      agentId: client.agent_id,
+      clientName: existing.negocio,
+      oficio: existing.oficio,
+      notifyEmail: existing.email,
+      whatsappNumber: existing.telefono,
+      planMinutos: input.plan ? PLAN_MINUTE_LIMITS[input.plan] : 0,
+    });
+  }
+
   return error ? { success: false, error: error.message } : { success: true };
 }
 
@@ -245,22 +263,42 @@ export async function updateLeadGeneral(
   input: GeneralInfoInput,
 ): Promise<ActionResult> {
   const supabase = await createClient();
+  const email = input.email?.trim() || null;
+  const telefono = input.telefono?.trim() || null;
   const { error } = await supabase
     .from("leads")
-    .update({
-      email: input.email?.trim() || null,
-      telefono: input.telefono?.trim() || null,
-    })
+    .update({ email, telefono })
     .eq("id", leadId);
   revalidatePath(`/leads/${leadId}`);
   const { data: client } = await supabase
     .from("clients")
-    .select("id")
+    .select("id, agent_id")
     .eq("lead_id", leadId)
     .maybeSingle();
   if (client) revalidatePath(`/clientes/${client.id}`);
   revalidatePath("/leads");
   revalidatePath("/clientes");
+
+  // Same n8n re-sync as updateLeadStatusPlanPaid, for email/telefono —
+  // best-effort, never blocks the save.
+  if (!error && client?.agent_id) {
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("negocio, oficio, plan")
+      .eq("id", leadId)
+      .single();
+    if (lead) {
+      await provisionDashboardClient({
+        agentId: client.agent_id,
+        clientName: lead.negocio,
+        oficio: lead.oficio,
+        notifyEmail: email,
+        whatsappNumber: telefono,
+        planMinutos: lead.plan ? PLAN_MINUTE_LIMITS[lead.plan as LeadPlan] : 0,
+      });
+    }
+  }
+
   return error ? { success: false, error: error.message } : { success: true };
 }
 
