@@ -19,6 +19,16 @@ export function IconUsers({ className }: IconProps) {
   );
 }
 
+export function IconMegaphone({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M3 11v2a2 2 0 002 2h1l5 4V5l-5 4H5a2 2 0 00-2 2z" />
+      <path d="M14.5 8.5c1.2 1 1.2 6 0 7" />
+      <path d="M18 6c2 1.8 2 10.2 0 12" />
+    </svg>
+  );
+}
+
 export function IconSpark({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} {...base}>

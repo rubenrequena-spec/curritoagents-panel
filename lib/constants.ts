@@ -101,3 +101,24 @@ export const CLIENT_STATUS_STYLES: Record<"activo" | "baja", string> = {
   activo: "bg-emerald-50 text-emerald-700 border-emerald-200",
   baja: "bg-slate-100 text-slate-600 border-slate-200",
 };
+
+export const ADS_CANAL_LABELS: Record<string, string> = {
+  meta: "Meta Ads",
+  google_ads: "Google Ads",
+  ga4: "GA4",
+  search_console: "Search Console",
+};
+
+export const ADS_PRIORITY_LABELS: Record<string, string> = {
+  low: "Baja",
+  medium: "Media",
+  high: "Alta",
+  urgent: "Urgente",
+};
+
+export const ADS_PRIORITY_STYLES: Record<string, string> = {
+  low: "bg-slate-100 text-slate-600 border-slate-200",
+  medium: "bg-blue-50 text-brand-blue border-blue-100",
+  high: "bg-amber-50 text-amber-700 border-amber-200",
+  urgent: "bg-red-50 text-red-600 border-red-100",
+};

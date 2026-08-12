@@ -14,6 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
+      ads_metrics: {
+        Row: {
+          canal: string
+          clics: number | null
+          conversiones: number | null
+          cpc: number | null
+          cpl: number | null
+          created_at: string
+          ctr: number | null
+          dimension: string
+          extra: Json
+          fecha: string
+          gasto: number | null
+          id: string
+          impresiones: number | null
+          posicion: number | null
+          sesiones: number | null
+        }
+        Insert: {
+          canal: string
+          clics?: number | null
+          conversiones?: number | null
+          cpc?: number | null
+          cpl?: number | null
+          created_at?: string
+          ctr?: number | null
+          dimension?: string
+          extra?: Json
+          fecha: string
+          gasto?: number | null
+          id?: string
+          impresiones?: number | null
+          posicion?: number | null
+          sesiones?: number | null
+        }
+        Update: {
+          canal?: string
+          clics?: number | null
+          conversiones?: number | null
+          cpc?: number | null
+          cpl?: number | null
+          created_at?: string
+          ctr?: number | null
+          dimension?: string
+          extra?: Json
+          fecha?: string
+          gasto?: number | null
+          id?: string
+          impresiones?: number | null
+          posicion?: number | null
+          sesiones?: number | null
+        }
+        Relationships: []
+      }
+      ads_recommendations: {
+        Row: {
+          category: string
+          created_at: string
+          evidence: Json
+          id: string
+          priority: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          suggested_action: string | null
+          summary: string
+          title: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          evidence?: Json
+          id?: string
+          priority?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          suggested_action?: string | null
+          summary: string
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          evidence?: Json
+          id?: string
+          priority?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          suggested_action?: string | null
+          summary?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ads_recommendations_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           agent_id: string | null
@@ -422,3 +526,5 @@ export type LeadNote = Database["public"]["Tables"]["lead_notes"]["Row"];
 export type Client = Database["public"]["Tables"]["clients"]["Row"];
 export type Task = Database["public"]["Tables"]["tasks"]["Row"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type AdsMetric = Database["public"]["Tables"]["ads_metrics"]["Row"];
+export type AdsRecommendation = Database["public"]["Tables"]["ads_recommendations"]["Row"];
