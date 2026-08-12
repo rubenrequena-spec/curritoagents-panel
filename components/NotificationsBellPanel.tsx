@@ -15,6 +15,25 @@ export type { NewLeadItem, DueTaskItem };
 // the first page load, no matter what changes elsewhere in the app.
 const POLL_INTERVAL_MS = 30_000;
 
+// Which leads/tasks the user has already seen, so the badge only counts what
+// showed up since the last time they opened the bell — not every outstanding
+// lead/task forever. Persisted per-browser; re-derived from scratch (nothing
+// carried over) each time the bell opens, so an item that leaves and later
+// reappears in the list counts as unread again instead of staying "seen".
+const SEEN_KEY = "notifications-seen-ids";
+const leadKey = (id: string) => `lead:${id}`;
+const taskKey = (id: string) => `task:${id}`;
+
+function loadSeenIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(SEEN_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
 export function NotificationsBellPanel({
   initialNewLeads,
   initialDueTasks,
@@ -25,26 +44,40 @@ export function NotificationsBellPanel({
   const [open, setOpen] = useState(false);
   const [newLeads, setNewLeads] = useState(initialNewLeads);
   const [dueTasks, setDueTasks] = useState(initialDueTasks);
+  const [seenIds, setSeenIds] = useState<Set<string>>(() => loadSeenIds());
   const containerRef = useRef<HTMLDivElement>(null);
-  const total = newLeads.length + dueTasks.length;
+  const unread =
+    newLeads.filter((l) => !seenIds.has(leadKey(l.id))).length +
+    dueTasks.filter((t) => !seenIds.has(taskKey(t.id))).length;
   const now = Date.now();
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (markSeen: boolean) => {
     try {
       const res = await fetch("/api/notifications", { cache: "no-store" });
       if (!res.ok) return;
       const data = await res.json();
-      setNewLeads(data.newLeads ?? []);
-      setDueTasks(data.dueTasks ?? []);
+      const leads: NewLeadItem[] = data.newLeads ?? [];
+      const tasks: DueTaskItem[] = data.dueTasks ?? [];
+      setNewLeads(leads);
+      setDueTasks(tasks);
+      if (markSeen) {
+        const next = new Set([...leads.map((l) => leadKey(l.id)), ...tasks.map((t) => taskKey(t.id))]);
+        setSeenIds(next);
+        try {
+          window.localStorage.setItem(SEEN_KEY, JSON.stringify([...next]));
+        } catch {
+          // Private browsing / quota — badge just won't persist across reloads.
+        }
+      }
     } catch {
       // Silently keep showing the last known-good data; the next poll retries.
     }
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(refresh, POLL_INTERVAL_MS);
+    const interval = setInterval(() => refresh(false), POLL_INTERVAL_MS);
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") refresh();
+      if (document.visibilityState === "visible") refresh(false);
     };
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
@@ -55,7 +88,7 @@ export function NotificationsBellPanel({
 
   useEffect(() => {
     if (!open) return;
-    refresh();
+    refresh(true);
     const handleClick = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -82,9 +115,9 @@ export function NotificationsBellPanel({
       >
         <span className="relative">
           <IconBell className="h-[18px] w-[18px]" />
-          {total > 0 && (
+          {unread > 0 && (
             <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
-              {total > 99 ? "99+" : total}
+              {unread > 99 ? "99+" : unread}
             </span>
           )}
         </span>
