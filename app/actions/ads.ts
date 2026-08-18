@@ -17,3 +17,10 @@ export async function resolveRecommendation(
   revalidatePath("/ads");
   return error ? { success: false, error: error.message } : { success: true };
 }
+
+export async function deleteRecommendation(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("ads_recommendations").delete().eq("id", id);
+  revalidatePath("/ads");
+  return error ? { success: false, error: error.message } : { success: true };
+}

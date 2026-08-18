@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_LABELS, STATUS_ORDER, STATUS_STYLES, SOURCE_LABELS } from "@/lib/constants";
 import { LeadsTable } from "@/components/LeadsTable";
 import { NewLeadDialog } from "@/components/NewLeadDialog";
 import { ExportLeadsButton } from "@/components/ExportLeadsButton";
 import { Badge } from "@/components/Badge";
+import { Pager } from "@/components/Pager";
 import { IconSearch } from "@/components/icons";
 import { getCurrentProfile, isAdmin } from "@/lib/auth";
 import type { Lead } from "@/lib/database.types";
@@ -54,39 +54,6 @@ function LeadsFilterForm({ source, status, q }: { source?: string; status?: stri
         Filtrar
       </button>
     </form>
-  );
-}
-
-function Pager({
-  page,
-  totalPages,
-  pageHref,
-}: {
-  page: number;
-  totalPages: number;
-  pageHref: (targetPage: number) => string;
-}) {
-  if (totalPages <= 1) return null;
-  return (
-    <div className="flex items-center justify-between text-sm">
-      {page > 1 ? (
-        <Link href={pageHref(page - 1)} className="text-brand-blue hover:underline">
-          ← Anterior
-        </Link>
-      ) : (
-        <span className="text-slate-300">← Anterior</span>
-      )}
-      <span className="text-slate-500">
-        Página {page} de {totalPages}
-      </span>
-      {page < totalPages ? (
-        <Link href={pageHref(page + 1)} className="text-brand-blue hover:underline">
-          Siguiente →
-        </Link>
-      ) : (
-        <span className="text-slate-300">Siguiente →</span>
-      )}
-    </div>
   );
 }
 

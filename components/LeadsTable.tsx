@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { STATUS_LABELS, SOURCE_LABELS, STATUS_STYLES, SOURCE_STYLES } from "@/lib/constants";
 import { Badge, Avatar } from "@/components/Badge";
+import { DeleteLeadRowButton } from "@/components/DeleteLeadRowButton";
 import type { Lead } from "@/lib/database.types";
 
 export function LeadsTable({
@@ -21,6 +22,7 @@ export function LeadsTable({
             <th className="px-4 py-3 font-medium">Contacto</th>
             <th className="px-4 py-3 font-medium">Estado</th>
             <th className="px-4 py-3 font-medium">Fecha</th>
+            <th className="px-4 py-3 font-medium" />
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -51,11 +53,14 @@ export function LeadsTable({
               <td className="px-4 py-3 text-slate-400">
                 {new Date(lead.created_at).toLocaleString("es-ES")}
               </td>
+              <td className="px-4 py-3 text-right">
+                <DeleteLeadRowButton leadId={lead.id} label={lead.nombre} />
+              </td>
             </tr>
           ))}
           {leads.length === 0 && (
             <tr>
-              <td colSpan={6} className="px-4 py-10 text-center text-slate-400">
+              <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
                 {emptyMessage}
               </td>
             </tr>
